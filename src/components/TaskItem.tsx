@@ -1,60 +1,36 @@
-// src/components/TaskItem.tsx
 import React, { useState } from 'react';
-import { Box, Text, Button, Input } from '@chakra-ui/react';
-import { updateDoc, doc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { Box, Button, Text } from '@chakra-ui/react';
 import { Task } from '../App';
-import { User } from 'firebase/auth';
+import EditTaskForm from './EditTaskForm';
 
 interface TaskItemProps {
   task: Task;
   deleteTask: (taskId: string) => void;
   fetchTasks: (userId: string) => void;
-  user: User;
+  userId: string;
 }
 
-const TaskItem: React.FC<TaskItemProps> = ({ task, deleteTask, fetchTasks, user }) => {
-  const [editing, setEditing] = useState<boolean>(false);
-  const [newTaskName, setNewTaskName] = useState<string>(task.taskName);
+const TaskItem: React.FC<TaskItemProps> = ({ task, deleteTask, fetchTasks, userId }) => {
+  const [isEditing, setIsEditing] = useState(false);
 
-  const saveTaskName = async () => {
-    await updateDoc(doc(db, 'tasks', task.id), { taskName: newTaskName });
-    setEditing(false);
-    fetchTasks(task.userId);
-  };
+  const toggleEditing = () => setIsEditing(!isEditing);
 
   return (
-    <Box>
-      {editing ? (
-        <>
-          <Input
-            value={newTaskName}
-            onChange={(e) => setNewTaskName(e.target.value)}
-            placeholder="Edit task name"
-          />
-          <Button onClick={saveTaskName} colorScheme="blue" size="sm" ml={2}>
-            Save
-          </Button>
-        </>
-      ) : (
-        <>
-          <Text>{task.taskName}</Text>
-          <Button onClick={() => setEditing(true)} colorScheme="yellow" size="sm" ml={2}>
-            Edit
-          </Button>
-          <Button onClick={() => deleteTask(task.id)} colorScheme="red" size="sm" ml={2}>
-            Delete
-          </Button>
-        </>
-      )}
+    <Box p={4} borderWidth={1} borderRadius="lg" mb={4} >
+      <Text fontSize="xl" >{task.taskName}</Text>
+      <Text fontSize="md" color="gray.500" >
+        {task.subTasks.length} Sub-tasks
+      </Text>
+      <Button colorScheme="blue" onClick={toggleEditing} mt={3} borderRadius={20}>
+        Edit
+      </Button>
+      <Button colorScheme="red" onClick={() => deleteTask(task.id)} mt={3} ml={3} borderRadius={20}>
+        Delete
+      </Button>
 
-      <Box mt={2}>
-        {task.subTasks?.map((subTask, index) => (
-          <Box key={index} ml={4}>
-            <Text>{subTask.name}</Text>
-          </Box>
-        ))}
-      </Box>
+      {isEditing && (
+        <EditTaskForm task={task} onClose={toggleEditing} fetchTasks={fetchTasks} userId={userId} />
+      )}
     </Box>
   );
 };
